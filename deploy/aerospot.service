@@ -1,0 +1,23 @@
+[Unit]
+Description=AeroSpot FPV (serveur web + API spots)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/aerospot
+Environment=NODE_ENV=production
+Environment=PORT=8787
+Environment=HOST=0.0.0.0
+# Environment=AUTH_TOKEN=change-moi
+ExecStart=/usr/bin/node server/index.mjs
+Restart=on-failure
+RestartSec=5
+# Durcissement
+NoNewPrivileges=true
+ProtectSystem=full
+ReadWritePaths=/home/pi/aerospot/data
+
+[Install]
+WantedBy=multi-user.target
