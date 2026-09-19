@@ -4,6 +4,7 @@ import type { Coordinates, LegalStatus, Spot } from '@/types'
 import { SPOT_CATEGORY_COLORS } from '@/types'
 
 export const SPOT_SOURCE = 'aerospot-spots'
+export const SPOT_HIT_LAYER = 'aerospot-spots-hit'
 export const SPOT_LAYER = 'aerospot-spots-circle'
 export const SPOT_SELECTED_LAYER = 'aerospot-spots-selected'
 export const SPOT_LABEL_LAYER = 'aerospot-spots-label'
@@ -48,6 +49,18 @@ export function addSpotLayers(map: MapLibreMap): void {
 
   if (!map.getSource(SPOT_SOURCE)) {
     map.addSource(SPOT_SOURCE, { type: 'geojson', data: EMPTY })
+  }
+  if (!map.getLayer(SPOT_HIT_LAYER)) {
+    map.addLayer({
+      id: SPOT_HIT_LAYER,
+      type: 'circle',
+      source: SPOT_SOURCE,
+      paint: {
+        'circle-radius': ['interpolate', ['linear'], ['zoom'], 4, 12, 9, 18, 14, 24],
+        'circle-color': '#000000',
+        'circle-opacity': 0,
+      },
+    })
   }
   if (!map.getLayer(SPOT_LAYER)) {
     map.addLayer({
@@ -203,6 +216,7 @@ export function setInspectData(
 }
 
 const OVERLAY_ORDER = [
+  SPOT_HIT_LAYER,
   SPOT_LAYER,
   SPOT_SELECTED_LAYER,
   SPOT_LABEL_LAYER,

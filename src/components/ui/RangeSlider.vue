@@ -5,6 +5,7 @@ const props = withDefaults(
     min?: number
     max?: number
     step?: number
+    label?: string
     format?: (value: number) => string
   }>(),
   { min: 0, max: 100, step: 1 },
@@ -30,6 +31,7 @@ function display(value: number): string {
       :max="max"
       :step="step"
       :value="modelValue"
+      :aria-label="label"
       @input="onInput"
     />
     <div class="mt-1 flex justify-between text-[10px] tabular-nums text-fg-subtle">
@@ -74,5 +76,21 @@ function display(value: number): string {
   background: var(--color-fg);
   border: 2px solid var(--color-accent);
   cursor: pointer;
+}
+
+@media (pointer: coarse) {
+  .range-input {
+    height: 6px;
+  }
+
+  .range-input::-webkit-slider-thumb {
+    width: 24px;
+    height: 24px;
+  }
+
+  .range-input::-moz-range-thumb {
+    width: 24px;
+    height: 24px;
+  }
 }
 </style>

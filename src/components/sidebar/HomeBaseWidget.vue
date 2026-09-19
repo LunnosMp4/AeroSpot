@@ -98,7 +98,7 @@ function clear(): void {
         </button>
       </div>
       <p class="mt-2 text-[11px] text-fg-subtle">
-        Astuce : recherche une adresse, ou clic droit directement sur la carte.
+        Astuce : recherche une adresse, appui long (ou clic droit) sur la carte.
       </p>
     </template>
   </section>
@@ -123,5 +123,12 @@ function clear(): void {
 }
 .action:disabled {
   opacity: 0.5;
+}
+
+@media (pointer: coarse) {
+  .action {
+    padding: 0.5rem 0.7rem;
+    font-size: 12px;
+  }
 }
 </style>

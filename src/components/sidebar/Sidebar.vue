@@ -34,7 +34,8 @@ const tabs: { id: SidebarPanel; label: string; icon: unknown }[] = [
       </div>
       <button
         type="button"
-        class="rounded-lg p-1.5 text-fg-subtle transition-colors hover:bg-white/5 hover:text-fg"
+        class="rounded-lg p-2 text-fg-subtle transition-colors hover:bg-white/5 hover:text-fg sm:p-1.5"
+        aria-label="Réduire le panneau"
         title="Réduire le panneau"
         @click="ui.toggleSidebar()"
       >
@@ -52,7 +53,7 @@ const tabs: { id: SidebarPanel; label: string; icon: unknown }[] = [
         v-for="tab in tabs"
         :key="tab.id"
         type="button"
-        class="flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-medium transition-colors"
+        class="flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2.5 text-xs font-medium transition-colors sm:py-2"
         :class="
           ui.activePanel === tab.id
             ? 'bg-white/[0.06] text-fg'

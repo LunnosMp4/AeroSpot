@@ -16,10 +16,14 @@ const items = [
 </script>
 
 <template>
-  <div v-if="settings.isLayerVisible('airspace')" class="glass-soft pointer-events-auto w-64 rounded-xl">
+  <div
+    v-if="settings.isLayerVisible('airspace')"
+    class="glass-soft pointer-events-auto w-[min(16rem,calc(100vw-5rem))] rounded-xl sm:w-64"
+  >
     <button
       type="button"
-      class="flex w-full items-center justify-between px-3 py-2"
+      class="flex w-full items-center justify-between px-3 py-2.5 sm:py-2"
+      :aria-expanded="open"
       @click="open = !open"
     >
       <span class="panel-title">Légende · Restrictions drone</span>

@@ -62,6 +62,7 @@ function flyTo(suggestion: AddressSuggestion): void {
   query.value = ''
   open.value = false
   suggestions.value = []
+  if (ui.isMobile) ui.closeSidebar()
 }
 
 async function setHome(suggestion: AddressSuggestion): Promise<void> {
@@ -78,6 +79,7 @@ async function setHome(suggestion: AddressSuggestion): Promise<void> {
   query.value = ''
   open.value = false
   suggestions.value = []
+  if (ui.isMobile) ui.closeSidebar()
 }
 
 function clear(): void {
@@ -101,7 +103,7 @@ function onEnter(): void {
         v-model="query"
         type="text"
         placeholder="Rechercher une adresse, une ville…"
-        class="h-10 w-full bg-transparent text-sm text-fg placeholder:text-fg-subtle focus:outline-none"
+        class="h-11 w-full bg-transparent text-sm text-fg placeholder:text-fg-subtle focus:outline-none sm:h-10"
         autocomplete="off"
         @focus="open = true"
         @keydown.enter="onEnter"
@@ -125,7 +127,7 @@ function onEnter(): void {
       <ul class="max-h-72 overflow-y-auto scrollbar-thin py-1">
         <li v-for="suggestion in suggestions" :key="suggestion.id">
           <div
-            class="group flex items-center gap-2 px-2.5 py-2 transition-colors hover:bg-white/5"
+            class="group flex items-center gap-2 px-2.5 py-2.5 transition-colors hover:bg-white/5 sm:py-2"
           >
             <button
               type="button"
@@ -142,7 +144,8 @@ function onEnter(): void {
             </button>
             <button
               type="button"
-              class="shrink-0 rounded-lg border border-line/70 px-2 py-1 text-[11px] text-fg-muted opacity-0 transition-opacity hover:text-accent group-hover:opacity-100"
+              class="shrink-0 rounded-lg border border-line/70 px-2.5 py-1.5 text-[11px] text-fg-muted transition-colors hover:text-accent sm:py-1 sm:opacity-0 sm:group-hover:opacity-100"
+              aria-label="Définir comme base"
               title="Définir comme base"
               @click="setHome(suggestion)"
             >

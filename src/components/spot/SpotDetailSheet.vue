@@ -82,28 +82,31 @@ function mapsLink(kind: 'google' | 'apple' | 'waze'): string {
       <div
         v-if="spot"
         class="fixed inset-0 z-40 flex items-end justify-center sm:items-center"
+        role="dialog"
+        aria-modal="true"
         @click.self="close"
       >
         <div class="absolute inset-0 bg-black/50 backdrop-blur-[2px]" @click="close" />
 
         <div
-          class="glass relative z-10 max-h-[88vh] w-full overflow-y-auto scrollbar-thin rounded-t-2xl sm:max-w-md sm:rounded-2xl"
+          class="glass relative z-10 max-h-[88dvh] w-full overflow-y-auto scrollbar-thin rounded-t-2xl sm:max-h-[85vh] sm:max-w-md sm:rounded-2xl"
         >
-          <header class="sticky top-0 z-10 flex items-start justify-between gap-3 border-b border-line/70 bg-ink-900/80 px-4 py-3 backdrop-blur">
+          <header class="sticky top-0 z-10 flex items-start justify-between gap-3 border-b border-line/70 bg-ink-900/80 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur">
             <div class="min-w-0">
               <h2 class="truncate text-base font-semibold text-fg">{{ spot.name }}</h2>
               <p v-if="spot.city" class="mt-0.5 text-xs text-fg-subtle">{{ spot.city }}</p>
             </div>
             <button
               type="button"
-              class="rounded-lg p-1.5 text-fg-subtle transition-colors hover:bg-white/5 hover:text-fg"
+              class="rounded-lg p-2 text-fg-subtle transition-colors hover:bg-white/5 hover:text-fg sm:p-1.5"
+              aria-label="Fermer"
               @click="close"
             >
               <X class="size-4" />
             </button>
           </header>
 
-          <div class="space-y-4 px-4 py-4">
+          <div class="space-y-4 px-4 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
             <div class="flex flex-wrap items-center gap-2">
               <span
                 class="rounded-full px-2 py-0.5 text-[11px] font-medium"

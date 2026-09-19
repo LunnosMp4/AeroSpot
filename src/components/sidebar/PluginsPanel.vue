@@ -37,7 +37,8 @@ async function toggle(id: string, value: boolean): Promise<void> {
             type="button"
             role="switch"
             :aria-checked="store.isEnabled(plugin.id)"
-            class="relative mt-0.5 h-5 w-9 shrink-0 rounded-full border transition-colors"
+            :aria-label="`Activer ${plugin.name}`"
+            class="relative mt-0.5 h-6 w-11 shrink-0 rounded-full border transition-colors sm:h-5 sm:w-9"
             :class="
               store.isEnabled(plugin.id)
                 ? 'border-accent/60 bg-accent/30'
@@ -46,10 +47,10 @@ async function toggle(id: string, value: boolean): Promise<void> {
             @click="toggle(plugin.id, !store.isEnabled(plugin.id))"
           >
             <span
-              class="absolute top-0.5 size-3.5 rounded-full transition-all"
+              class="absolute top-0.5 size-4 rounded-full transition-all sm:size-3.5"
               :class="
                 store.isEnabled(plugin.id)
-                  ? 'left-[18px] bg-accent'
+                  ? 'left-[22px] bg-accent sm:left-[18px]'
                   : 'left-0.5 bg-fg-subtle'
               "
             />

@@ -10,11 +10,22 @@ import { useAirspaceStore } from './stores/airspace.store'
 import { useFiltersStore } from './stores/filters.store'
 import { useHomeStore } from './stores/home.store'
 import { useSpotsStore } from './stores/spots.store'
+import { useUiStore } from './stores/ui.store'
+
+const MOBILE_QUERY = '(max-width: 767px)'
 
 async function bootstrap(): Promise<void> {
   const app = createApp(App)
   const pinia = createPinia()
   app.use(pinia)
+
+  const uiStore = useUiStore(pinia)
+  const isMobile =
+    typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+      ? window.matchMedia(MOBILE_QUERY).matches
+      : false
+  uiStore.setMobile(isMobile)
+  if (isMobile) uiStore.closeSidebar()
 
   const pluginsStore = usePluginsStore(pinia)
   const host = createPluginHost(pluginSettingsAccess(pluginsStore))

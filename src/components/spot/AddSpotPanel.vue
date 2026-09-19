@@ -58,8 +58,12 @@ async function save(): Promise<void> {
   <Teleport to="body">
     <div class="fixed inset-0 z-40 flex items-end justify-center sm:items-center">
       <div class="absolute inset-0 bg-black/50 backdrop-blur-[2px]" @click="cancel" />
-      <div class="glass relative z-10 w-full rounded-t-2xl sm:max-w-md sm:rounded-2xl">
-        <header class="flex items-center justify-between border-b border-line/70 px-4 py-3">
+      <div
+        class="glass relative z-10 flex max-h-[90dvh] w-full flex-col overflow-hidden rounded-t-2xl sm:max-h-[85vh] sm:max-w-md sm:rounded-2xl"
+        role="dialog"
+        aria-modal="true"
+      >
+        <header class="flex items-center justify-between border-b border-line/70 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
           <div>
             <h2 class="text-base font-semibold text-fg">Nouveau spot</h2>
             <p class="mt-0.5 flex items-center gap-1 font-mono text-[11px] text-fg-subtle">
@@ -69,14 +73,15 @@ async function save(): Promise<void> {
           </div>
           <button
             type="button"
-            class="rounded-lg p-1.5 text-fg-subtle transition-colors hover:bg-white/5 hover:text-fg"
+            class="rounded-lg p-2 text-fg-subtle transition-colors hover:bg-white/5 hover:text-fg sm:p-1.5"
+            aria-label="Fermer"
             @click="cancel"
           >
             <X class="size-4" />
           </button>
         </header>
 
-        <div class="space-y-3 px-4 py-4">
+        <div class="space-y-3 overflow-y-auto scrollbar-thin px-4 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
           <label class="block space-y-1">
             <span class="panel-title">Nom</span>
             <input

@@ -72,6 +72,7 @@ function cycleBasemap(): void {
     <button
       type="button"
       class="ctrl-btn"
+      aria-label="Recentrer le nord"
       title="Recentrer le nord"
       @click="mapStore.resetNorth()"
     >
@@ -81,6 +82,7 @@ function cycleBasemap(): void {
     <button
       type="button"
       class="ctrl-btn"
+      :aria-label="`Fond de carte : ${basemapLabel}`"
       :title="`Fond de carte : ${basemapLabel}`"
       @click="cycleBasemap"
     >
@@ -91,6 +93,7 @@ function cycleBasemap(): void {
       type="button"
       class="ctrl-btn"
       :disabled="geolocating || loading"
+      aria-label="Ma position"
       title="Ma position"
       @click="onLocate"
     >
@@ -106,6 +109,7 @@ function cycleBasemap(): void {
       type="button"
       class="ctrl-btn"
       :class="settings.isLayerVisible(def.id, def.defaultVisible ?? true) ? 'text-accent' : 'text-fg-subtle'"
+      :aria-label="def.label"
       :title="def.label"
       @click="settings.toggleLayer(def.id, def.defaultVisible ?? true)"
     >
@@ -118,6 +122,7 @@ function cycleBasemap(): void {
       type="button"
       class="ctrl-btn"
       :class="ui.inspectorEnabled ? 'text-accent' : 'text-fg-subtle'"
+      aria-label="Inspecteur de légalité"
       title="Inspecteur de légalité"
       @click="ui.toggleInspector()"
     >
@@ -144,5 +149,12 @@ function cycleBasemap(): void {
 
 .ctrl-btn:disabled {
   opacity: 0.5;
+}
+
+@media (pointer: coarse) {
+  .ctrl-btn {
+    width: 44px;
+    height: 44px;
+  }
 }
 </style>

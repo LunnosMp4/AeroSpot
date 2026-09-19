@@ -48,6 +48,7 @@ function driveFormat(value: number): string {
         :min="0"
         :max="MAX_DRIVE_MIN"
         :step="5"
+        label="Temps de trajet maximum"
         :format="driveFormat"
       />
     </section>
@@ -103,7 +104,7 @@ function driveFormat(value: number): string {
           v-for="status in statuses"
           :key="status"
           type="button"
-          class="flex w-full items-center gap-2.5 rounded-lg border border-line/70 px-2.5 py-2 text-xs transition-colors"
+          class="flex w-full items-center gap-2.5 rounded-lg border border-line/70 px-2.5 py-2.5 text-xs transition-colors sm:py-2"
           :class="
             filters.criteria.legalStatuses.includes(status)
               ? 'bg-white/[0.04] text-fg'

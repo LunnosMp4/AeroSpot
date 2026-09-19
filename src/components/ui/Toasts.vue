@@ -20,13 +20,13 @@ const TONES: Record<Toast['kind'], string> = {
 
 <template>
   <div
-    class="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex flex-col items-center gap-2 px-4"
+    class="pointer-events-none fixed inset-x-0 bottom-[max(5rem,env(safe-area-inset-bottom))] z-50 flex flex-col items-center gap-2 px-4 sm:bottom-[max(1rem,env(safe-area-inset-bottom))]"
   >
     <TransitionGroup name="toast">
       <div
         v-for="toast in ui.toasts"
         :key="toast.id"
-        class="glass pointer-events-auto flex max-w-sm items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm shadow-lg"
+        class="glass pointer-events-auto flex w-full max-w-sm items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm shadow-lg"
       >
         <component :is="ICONS[toast.kind]" :class="['size-4 shrink-0', TONES[toast.kind]]" />
         <span class="text-fg">{{ toast.message }}</span>

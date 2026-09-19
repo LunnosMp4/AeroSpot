@@ -19,7 +19,7 @@ const statusColor = computed(() =>
 <template>
   <div
     v-if="ui.inspectorEnabled || result || airspace.inspectError"
-    class="glass pointer-events-auto w-72 rounded-2xl"
+    class="glass pointer-events-auto w-[calc(100vw-1.5rem)] max-w-full rounded-2xl sm:w-72"
   >
     <header class="flex items-center justify-between border-b border-line/70 px-3.5 py-2.5">
       <div class="flex items-center gap-2 text-accent">
@@ -28,7 +28,8 @@ const statusColor = computed(() =>
       </div>
       <button
         type="button"
-        class="rounded-md p-0.5 text-fg-subtle transition-colors hover:text-fg"
+        class="rounded-md p-1.5 text-fg-subtle transition-colors hover:text-fg sm:p-0.5"
+        aria-label="Fermer l'inspecteur"
         title="Fermer"
         @click="ui.toggleInspector()"
       >

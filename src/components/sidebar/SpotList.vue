@@ -44,12 +44,13 @@ function onSelect(id: string): void {
           v-model="query"
           type="text"
           placeholder="Filtrer les spots…"
-          class="h-8 w-full bg-transparent text-xs text-fg placeholder:text-fg-subtle focus:outline-none"
+          class="h-10 w-full bg-transparent text-xs text-fg placeholder:text-fg-subtle focus:outline-none sm:h-8"
         />
       </div>
       <button
         type="button"
-        class="flex size-8 shrink-0 items-center justify-center rounded-lg border border-line/80 text-fg-muted transition-colors hover:border-accent/50 hover:text-accent"
+        class="flex size-10 shrink-0 items-center justify-center rounded-lg border border-line/80 text-fg-muted transition-colors hover:border-accent/50 hover:text-accent sm:size-8"
+        aria-label="Ouvrir les filtres"
         title="Filtres"
         @click="ui.setPanel('filters')"
       >
@@ -64,7 +65,7 @@ function onSelect(id: string): void {
         <Sparkles class="size-3.5 shrink-0 text-accent" />
         <select
           v-model.number="radius"
-          class="h-6 w-full bg-transparent text-[11px] text-fg focus:outline-none"
+          class="h-8 w-full bg-transparent text-[11px] text-fg focus:outline-none sm:h-6"
           title="Rayon de recherche"
         >
           <option :value="10">Rayon 10 km</option>
@@ -75,7 +76,7 @@ function onSelect(id: string): void {
       </div>
       <button
         type="button"
-        class="flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-accent/50 bg-accent/10 px-2.5 text-[11px] font-medium text-accent transition-colors hover:bg-accent/20 disabled:opacity-50"
+        class="flex h-10 shrink-0 items-center gap-1.5 rounded-lg border border-accent/50 bg-accent/10 px-2.5 text-[11px] font-medium text-accent transition-colors hover:bg-accent/20 disabled:opacity-50 sm:h-8"
         :disabled="discovery.loading.value"
         title="Chercher des spots autour de la base"
         @click="discovery.discover(radius)"
@@ -87,7 +88,8 @@ function onSelect(id: string): void {
       <button
         v-if="spotsStore.external.length"
         type="button"
-        class="flex size-8 shrink-0 items-center justify-center rounded-lg border border-line/80 text-fg-subtle transition-colors hover:border-danger/50 hover:text-danger"
+        class="flex size-10 shrink-0 items-center justify-center rounded-lg border border-line/80 text-fg-subtle transition-colors hover:border-danger/50 hover:text-danger sm:size-8"
+        aria-label="Effacer les spots OpenStreetMap"
         title="Effacer les spots OpenStreetMap"
         @click="discovery.clear()"
       >

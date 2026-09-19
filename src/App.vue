@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { PanelLeftOpen, Plus } from '@lucide/vue'
 import type { Coordinates, Spot } from '@/types'
 import AddSpotPanel from '@/components/spot/AddSpotPanel.vue'
@@ -10,6 +10,7 @@ import MapControls from '@/components/layout/MapControls.vue'
 import Sidebar from '@/components/sidebar/Sidebar.vue'
 import SpotDetailSheet from '@/components/spot/SpotDetailSheet.vue'
 import Toasts from '@/components/ui/Toasts.vue'
+import { useIsMobile } from '@/composables/useMediaQuery'
 import { useAirspaceStore } from '@/stores/airspace.store'
 import { useHomeStore } from '@/stores/home.store'
 import { useSpotsStore } from '@/stores/spots.store'
@@ -21,8 +22,17 @@ const airspace = useAirspaceStore()
 const homeStore = useHomeStore()
 const ui = useUiStore()
 
+const isMobile = useIsMobile()
+watch(isMobile, (value) => ui.setMobile(value), { immediate: true })
+
 const pendingCoordinates = ref<Coordinates | null>(null)
 let legalityTimer: number | undefined
+
+const inspectorVisible = computed(
+  () => ui.inspectorEnabled || !!airspace.inspected || !!airspace.inspectError,
+)
+
+const hideFloating = computed(() => isMobile.value && ui.sidebarOpen)
 
 function onPickCoordinates(coordinates: Coordinates): void {
   pendingCoordinates.value = coordinates
@@ -74,46 +84,69 @@ watch(
     <MapCanvas @pick-coordinates="onPickCoordinates" />
 
     <div class="pointer-events-none absolute inset-0">
+      <Transition name="fade">
+        <div
+          v-if="isMobile && ui.sidebarOpen"
+          class="pointer-events-auto absolute inset-0 bg-black/50 backdrop-blur-[2px]"
+          @click="ui.closeSidebar()"
+        />
+      </Transition>
+
       <Transition name="sidebar">
         <div
           v-if="ui.sidebarOpen"
-          class="pointer-events-auto absolute inset-x-3 top-3 bottom-3 sm:right-auto sm:w-[364px]"
+          class="pointer-events-auto absolute"
+          :class="
+            isMobile
+              ? 'inset-0 px-[max(0.75rem,env(safe-area-inset-left))] pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-[max(0.75rem,env(safe-area-inset-top))]'
+              : 'inset-y-3 left-[max(0.75rem,env(safe-area-inset-left))] sm:w-[364px]'
+          "
         >
           <Sidebar />
         </div>
       </Transition>
 
-      <button
-        v-if="!ui.sidebarOpen"
-        type="button"
-        class="glass-soft pointer-events-auto absolute left-3 top-3 flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-fg-muted transition-colors hover:text-fg"
-        title="Ouvrir le panneau"
-        @click="ui.toggleSidebar()"
-      >
-        <PanelLeftOpen class="size-4" />
-        AeroSpot FPV
-      </button>
+      <div class="absolute inset-0" :class="hideFloating ? 'hidden' : ''">
+        <button
+          v-if="!ui.sidebarOpen"
+          type="button"
+          aria-label="Ouvrir le panneau"
+          class="glass-soft pointer-events-auto absolute left-[max(0.75rem,env(safe-area-inset-left))] top-[max(0.75rem,env(safe-area-inset-top))] flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-fg-muted transition-colors hover:text-fg"
+          @click="ui.toggleSidebar()"
+        >
+          <PanelLeftOpen class="size-4" />
+          AeroSpot FPV
+        </button>
 
-      <div class="pointer-events-none absolute right-4 top-4">
-        <MapControls />
+        <div
+          class="pointer-events-none absolute right-[max(1rem,env(safe-area-inset-right))] top-[max(1rem,env(safe-area-inset-top))]"
+        >
+          <MapControls />
+        </div>
+
+        <div
+          class="pointer-events-none absolute bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-[max(0.75rem,env(safe-area-inset-left))] flex flex-col items-start gap-2 sm:bottom-16 sm:left-4 sm:max-w-[min(288px,calc(100vw-2rem))]"
+        >
+          <LegalityInspector />
+          <AirspaceLegend v-show="!(isMobile && inspectorVisible)" />
+        </div>
+
+        <button
+          v-show="!(isMobile && inspectorVisible)"
+          type="button"
+          aria-label="Ajouter un spot"
+          class="glass-soft pointer-events-auto absolute flex items-center gap-2 rounded-xl font-medium text-fg transition-colors hover:text-accent"
+          :class="
+            isMobile
+              ? 'bottom-[max(0.75rem,env(safe-area-inset-bottom))] right-[max(0.75rem,env(safe-area-inset-right))] size-12 justify-center'
+              : 'bottom-16 right-4 px-3.5 py-2.5 text-sm'
+          "
+          @click="startAddSpot"
+        >
+          <Plus :class="isMobile ? 'size-5' : 'size-4'" />
+          <span v-if="!isMobile">Ajouter un spot</span>
+        </button>
       </div>
-
-      <div
-        class="pointer-events-none absolute bottom-16 left-3 flex flex-col items-start gap-2 sm:left-4 sm:max-w-[min(288px,calc(100vw-2rem))]"
-      >
-        <LegalityInspector />
-        <AirspaceLegend />
-      </div>
-
-      <button
-        type="button"
-        class="glass-soft pointer-events-auto absolute bottom-16 right-4 flex items-center gap-2 rounded-xl px-3.5 py-2.5 text-sm font-medium text-fg transition-colors hover:text-accent"
-        title="Ajouter un spot"
-        @click="startAddSpot"
-      >
-        <Plus class="size-4" />
-        Ajouter un spot
-      </button>
     </div>
 
     <SpotDetailSheet />
@@ -134,6 +167,21 @@ watch(
 .sidebar-enter-from,
 .sidebar-leave-to {
   opacity: 0;
-  transform: translateX(-12px);
+  transform: translateY(12px);
+}
+@media (min-width: 768px) {
+  .sidebar-enter-from,
+  .sidebar-leave-to {
+    transform: translateX(-12px);
+  }
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>

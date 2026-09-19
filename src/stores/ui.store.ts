@@ -12,6 +12,7 @@ export type SidebarPanel = 'home' | 'spots' | 'filters' | 'plugins'
 let toastSeq = 0
 
 export const useUiStore = defineStore('ui', () => {
+  const isMobile = ref(false)
   const sidebarOpen = ref(true)
   const activePanel = ref<SidebarPanel>('spots')
   const selectedSpotId = ref<string | null>(null)
@@ -19,8 +20,20 @@ export const useUiStore = defineStore('ui', () => {
   const addSpotMode = ref(false)
   const toasts = ref<Toast[]>([])
 
+  function setMobile(value: boolean): void {
+    isMobile.value = value
+  }
+
   function toggleSidebar(): void {
     sidebarOpen.value = !sidebarOpen.value
+  }
+
+  function openSidebar(): void {
+    sidebarOpen.value = true
+  }
+
+  function closeSidebar(): void {
+    sidebarOpen.value = false
   }
 
   function setPanel(panel: SidebarPanel): void {
@@ -30,6 +43,7 @@ export const useUiStore = defineStore('ui', () => {
 
   function selectSpot(id: string | null): void {
     selectedSpotId.value = id
+    if (id && isMobile.value) sidebarOpen.value = false
   }
 
   function toggleInspector(): void {
@@ -54,13 +68,17 @@ export const useUiStore = defineStore('ui', () => {
   }
 
   return {
+    isMobile,
     sidebarOpen,
     activePanel,
     selectedSpotId,
     inspectorEnabled,
     addSpotMode,
     toasts,
+    setMobile,
     toggleSidebar,
+    openSidebar,
+    closeSidebar,
     setPanel,
     selectSpot,
     toggleInspector,
