@@ -87,7 +87,7 @@ watch(
       <Transition name="fade">
         <div
           v-if="isMobile && ui.sidebarOpen"
-          class="pointer-events-auto absolute inset-0 bg-black/50 backdrop-blur-[2px]"
+          class="pointer-events-auto absolute inset-0 z-20 bg-black/50 backdrop-blur-[2px]"
           @click="ui.closeSidebar()"
         />
       </Transition>
@@ -95,7 +95,7 @@ watch(
       <Transition name="sidebar">
         <div
           v-if="ui.sidebarOpen"
-          class="pointer-events-auto absolute"
+          class="pointer-events-auto absolute z-30"
           :class="
             isMobile
               ? 'inset-0 px-[max(0.75rem,env(safe-area-inset-left))] pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-[max(0.75rem,env(safe-area-inset-top))]'
@@ -106,7 +106,10 @@ watch(
         </div>
       </Transition>
 
-      <div class="absolute inset-0" :class="hideFloating ? 'hidden' : ''">
+      <div
+        class="pointer-events-none absolute inset-0 z-10"
+        :class="hideFloating ? 'hidden' : ''"
+      >
         <button
           v-if="!ui.sidebarOpen"
           type="button"
