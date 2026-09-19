@@ -141,6 +141,12 @@ function serveStatic(req, res, url) {
   }
 
   if (!existsSync(filePath) || statSync(filePath).isDirectory()) {
+    // Missing files with an extension are assets — never fall back to the SPA
+    // shell, so a missing worker/bundle fails loudly instead of returning HTML.
+    if (extname(pathname) !== '') {
+      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' })
+      return res.end('Not found')
+    }
     filePath = join(DIST, 'index.html')
   }
   if (!existsSync(filePath)) {
