@@ -13,7 +13,7 @@ export interface PersistedSettings {
 
 const DEFAULT_SETTINGS: PersistedSettings = {
   basemap: 'dark',
-  layerVisibility: { airspace: true, isochrone: false },
+  layerVisibility: { airspace: true, 'airspace-international': false, isochrone: false },
 }
 
 export const useSettingsStore = defineStore('settings', () => {

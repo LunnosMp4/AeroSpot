@@ -45,6 +45,8 @@ export const useSpotsStore = defineStore('spots', () => {
   const catalog = ref<Spot[]>([])
   const catalogLoading = ref(false)
   const savedIds = ref<string[]>([])
+  const savedSpots = ref<Spot[]>([])
+  const savedIdSet = computed(() => new Set(savedIds.value))
 
   const routes = ref<Record<string, RouteInfo>>({})
   const matrixLoading = ref(false)
@@ -61,6 +63,7 @@ export const useSpotsStore = defineStore('spots', () => {
   async function initLibrary(): Promise<void> {
     user.value = await persistence.loadSpots()
     savedIds.value = await persistence.loadSaved()
+    savedSpots.value = await persistence.loadSavedSpots()
   }
 
   async function loadCatalog(): Promise<void> {
@@ -82,7 +85,13 @@ export const useSpotsStore = defineStore('spots', () => {
   const baseSpots = computed<Spot[]>(() => {
     const seen = new Set<string>()
     const merged: Spot[] = []
-    for (const spot of [...external.value, ...user.value, ...catalog.value, ...seed.value]) {
+    for (const spot of [
+      ...external.value,
+      ...user.value,
+      ...savedSpots.value,
+      ...catalog.value,
+      ...seed.value,
+    ]) {
       if (seen.has(spot.id)) continue
       seen.add(spot.id)
       merged.push(spot)
@@ -114,35 +123,51 @@ export const useSpotsStore = defineStore('spots', () => {
   /**
    * Bounded working set. With a national OSM catalogue (10k+ spots) we only
    * route/render the spots nearest to the home base, keeping API and DOM work flat.
+   *
+   * Curated, user-created, discovered and saved spots are always candidates so a
+   * "search this area" run far from the base still shows its results.
    */
   const candidateSpots = computed<Spot[]>(() => {
     const list = allSpots.value
     const origin = home.coordinates
-    const savedSet = new Set(savedIds.value)
-    const savedList = list.filter((spot) => savedSet.has(spot.id))
+
+    const priority = list.filter(
+      (spot) => spot.source !== 'catalog' || savedIdSet.value.has(spot.id),
+    )
 
     if (!origin) {
       // Without a base there is nothing to rank by distance, so only show the
       // curated, user, discovered and saved spots — not the national catalogue.
-      return list.filter((spot) => spot.source !== 'catalog' || savedSet.has(spot.id))
+      return priority
     }
 
+    const priorityIds = new Set(priority.map((spot) => spot.id))
     const nearest = list
+      .filter((spot) => !priorityIds.has(spot.id))
       .map((spot) => ({ spot, distance: haversineKm(origin, spot.coordinates) }))
       .sort((a, b) => a.distance - b.distance)
       .slice(0, CANDIDATE_LIMIT)
       .map((entry) => entry.spot)
 
-    // Saved spots are always candidates, even far from the base.
-    const seen = new Set(nearest.map((spot) => spot.id))
-    return [...nearest, ...savedList.filter((spot) => !seen.has(spot.id))]
+    return [...priority, ...nearest]
   })
 
   function matchesFilters(spot: Spot): boolean {
     const criteria = filters.criteria
+    // Saved spots stay pinned on the map: never hidden by the discovery area
+    // or by the other filters.
+    if (savedIdSet.value.has(spot.id)) return true
     if (!criteria.categories.includes(spot.category)) return false
-    if (criteria.legalStatuses.length > 0 && !criteria.legalStatuses.includes(spot.legalStatus)) {
-      return false
+
+    // Discovered spots were already checked against airspace when the user ran
+    // the search. Keep them stable instead of letting a delayed re-resolution
+    // (or a far-away base) silently hide the results they just asked for.
+    const discovered = spot.source === 'overpass'
+    const user = spot.source === 'user'
+    if (!user && !discovered) {
+      if (criteria.legalStatuses.length > 0 && !criteria.legalStatuses.includes(spot.legalStatus)) {
+        return false
+      }
     }
     if (criteria.query.trim()) {
       const needle = stripAccents(criteria.query)
@@ -151,8 +176,8 @@ export const useSpotsStore = defineStore('spots', () => {
       )
       if (!haystack.includes(needle)) return false
     }
-    if (criteria.savedOnly && !savedIds.value.includes(spot.id)) return false
-    if (home.home && spot.route) {
+    if (criteria.savedOnly && !savedIdSet.value.has(spot.id)) return false
+    if (!user && !discovered && home.home && spot.route) {
       const limit =
         criteria.maxDriveMin >= MAX_DRIVE_MIN ? Number.POSITIVE_INFINITY : criteria.maxDriveMin
       if (spot.route.travelTimeMin > limit) return false
@@ -172,7 +197,19 @@ export const useSpotsStore = defineStore('spots', () => {
     } else {
       list.sort((a, b) => compareRoute(a, b, 'travelTimeMin'))
     }
-    return list.slice(0, DISPLAY_LIMIT)
+
+    // Only bound the bulky national catalogue; keep every discovered, user and
+    // saved spot so targeted searches are never silently dropped.
+    let catalogCount = 0
+    const limited: Spot[] = []
+    for (const spot of list) {
+      if (spot.source === 'catalog' && !savedIdSet.value.has(spot.id)) {
+        if (catalogCount >= DISPLAY_LIMIT) continue
+        catalogCount++
+      }
+      limited.push(spot)
+    }
+    return limited
   })
 
   const totalCount = computed(() => allSpots.value.length)
@@ -180,7 +217,7 @@ export const useSpotsStore = defineStore('spots', () => {
   const savedCount = computed(() => savedIds.value.length)
 
   function isSaved(id: string): boolean {
-    return savedIds.value.includes(id)
+    return savedIdSet.value.has(id)
   }
 
   function toggleSaved(id: string): boolean {
@@ -188,6 +225,20 @@ export const useSpotsStore = defineStore('spots', () => {
     savedIds.value = next
       ? [...savedIds.value, id]
       : savedIds.value.filter((item) => item !== id)
+
+    if (next) {
+      const spot = baseSpots.value.find((item) => item.id === id)
+      // User spots are already persisted as full objects; keep a copy of every
+      // other saved spot so it survives discovery clears and reloads.
+      if (spot && spot.source !== 'user') {
+        savedSpots.value = [spot, ...savedSpots.value.filter((item) => item.id !== id)]
+        void persistence.saveSpotData(spot)
+      }
+    } else {
+      savedSpots.value = savedSpots.value.filter((item) => item.id !== id)
+      void persistence.unsaveSpotData(id)
+    }
+
     void (next ? persistence.save(id) : persistence.unsave(id))
     return next
   }

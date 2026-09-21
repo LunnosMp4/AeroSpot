@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { LoaderCircle, Search, SlidersHorizontal, Sparkles, Trash } from '@lucide/vue'
+import { computed } from 'vue'
+import { LoaderCircle, Search, SlidersHorizontal, Trash } from '@lucide/vue'
 import { useSpotDiscovery } from '@/composables/useSpotDiscovery'
 import { useAirspaceStore } from '@/stores/airspace.store'
 import { useFiltersStore } from '@/stores/filters.store'
@@ -13,8 +13,6 @@ const filters = useFiltersStore()
 const airspace = useAirspaceStore()
 const ui = useUiStore()
 const discovery = useSpotDiscovery()
-
-const radius = ref(25)
 
 const hiddenProhibited = computed(() => {
   if (filters.criteria.legalStatuses.includes('prohibited')) return 0
@@ -58,46 +56,7 @@ function onSelect(id: string): void {
       </button>
     </div>
 
-    <div class="flex items-center gap-2 px-3 pt-2">
-      <div
-        class="flex flex-1 items-center gap-1.5 rounded-lg border border-line/80 bg-ink-850/70 px-2 py-1"
-      >
-        <Sparkles class="size-3.5 shrink-0 text-accent" />
-        <select
-          v-model.number="radius"
-          class="h-8 w-full bg-transparent text-[11px] text-fg focus:outline-none sm:h-6"
-          title="Rayon de recherche"
-        >
-          <option :value="10">Rayon 10 km</option>
-          <option :value="25">Rayon 25 km</option>
-          <option :value="50">Rayon 50 km</option>
-          <option :value="100">Rayon 100 km</option>
-        </select>
-      </div>
-      <button
-        type="button"
-        class="flex h-10 shrink-0 items-center gap-1.5 rounded-lg border border-accent/50 bg-accent/10 px-2.5 text-[11px] font-medium text-accent transition-colors hover:bg-accent/20 disabled:opacity-50 sm:h-8"
-        :disabled="discovery.loading.value"
-        title="Chercher des spots autour de la base"
-        @click="discovery.discover(radius)"
-      >
-        <LoaderCircle v-if="discovery.loading.value" class="size-3.5 animate-spin" />
-        <Sparkles v-else class="size-3.5" />
-        Découvrir
-      </button>
-      <button
-        v-if="spotsStore.external.length"
-        type="button"
-        class="flex size-10 shrink-0 items-center justify-center rounded-lg border border-line/80 text-fg-subtle transition-colors hover:border-danger/50 hover:text-danger sm:size-8"
-        aria-label="Effacer les spots OpenStreetMap"
-        title="Effacer les spots OpenStreetMap"
-        @click="discovery.clear()"
-      >
-        <Trash class="size-3.5" />
-      </button>
-    </div>
-
-    <div class="flex items-center justify-between px-3 py-2">
+    <div class="flex items-center justify-between gap-2 px-3 py-2.5">
       <span class="text-[11px] text-fg-subtle">
         {{ spotsStore.visibleSpots.length }} affichés
         <template v-if="spotsStore.totalCount > spotsStore.visibleSpots.length">
@@ -110,20 +69,23 @@ function onSelect(id: string): void {
           · {{ hiddenProhibited }} en zone interdite masqués
         </template>
       </span>
-      <span
-        v-if="spotsStore.catalogLoading"
-        class="flex items-center gap-1 text-[11px] text-fg-subtle"
-      >
-        <LoaderCircle class="size-3 animate-spin" />
-        Catalogue…
-      </span>
-      <span
-        v-else-if="airspace.legalityLoading"
-        class="flex items-center gap-1 text-[11px] text-fg-subtle"
-      >
-        <LoaderCircle class="size-3 animate-spin" />
-        Analyse…
-      </span>
+      <div class="flex shrink-0 items-center gap-1.5">
+        <LoaderCircle v-if="spotsStore.catalogLoading" class="size-3 animate-spin text-fg-subtle" />
+        <LoaderCircle
+          v-else-if="airspace.legalityLoading"
+          class="size-3 animate-spin text-fg-subtle"
+        />
+        <button
+          v-if="spotsStore.external.length"
+          type="button"
+          class="flex size-7 items-center justify-center rounded-lg text-fg-subtle transition-colors hover:bg-white/5 hover:text-danger"
+          aria-label="Effacer les spots découverts"
+          title="Effacer les spots découverts"
+          @click="discovery.clear()"
+        >
+          <Trash class="size-3" />
+        </button>
+      </div>
     </div>
 
     <div class="flex-1 space-y-2 overflow-y-auto scrollbar-thin px-3 pb-3">
@@ -140,7 +102,8 @@ function onSelect(id: string): void {
         class="rounded-xl border border-dashed border-line/70 px-4 py-8 text-center text-xs leading-relaxed text-fg-subtle"
       >
         Aucun spot ne correspond à ces critères.<br />
-        Utilisez « Découvrir » pour charger des spots OpenStreetMap ou élargissez les filtres.
+        Utilisez « Rechercher dans cette zone » sur la carte pour charger des spots
+        OpenStreetMap (FPV & parapente), ou élargissez les filtres.
       </p>
     </div>
   </div>

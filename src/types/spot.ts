@@ -3,7 +3,14 @@ export interface Coordinates {
   lat: number
 }
 
-export type SpotCategory = 'bando' | 'freestyle' | 'cinematic' | 'race' | 'park'
+export type SpotCategory =
+  | 'bando'
+  | 'ruins'
+  | 'freestyle'
+  | 'cinematic'
+  | 'race'
+  | 'park'
+  | 'paragliding'
 
 export type SpotSource = 'seed' | 'user' | 'overpass' | 'catalog'
 
@@ -44,16 +51,20 @@ export interface SpotDraft {
 
 export const SPOT_CATEGORY_LABELS: Record<SpotCategory, string> = {
   bando: 'Bando',
+  ruins: 'Ruines',
   freestyle: 'Freestyle',
   cinematic: 'Cinématique',
   race: 'Race',
   park: 'Parc',
+  paragliding: 'Parapente',
 }
 
 export const SPOT_CATEGORY_COLORS: Record<SpotCategory, string> = {
   bando: '#f0a83c',
+  ruins: '#b08968',
   freestyle: '#6d8cff',
   cinematic: '#c084fc',
   race: '#f0524d',
   park: '#35d07f',
+  paragliding: '#38bdf8',
 }

@@ -11,6 +11,8 @@ export const CONFIG = {
   ignWms: env.VITE_IGN_WMS ?? 'https://data.geopf.fr/wms-r/wms',
   ignWfs: env.VITE_IGN_WFS ?? 'https://data.geopf.fr/wfs/ows',
   ignIsochrone: env.VITE_IGN_ISOCHRONE ?? 'https://data.geopf.fr/navigation/isochrone',
+  openaipExports:
+    env.VITE_OPENAIP_EXPORTS ?? '/openaip',
   overpassEndpoints: (
     env.VITE_OVERPASS_API ??
     'https://overpass-api.de/api/interpreter,https://overpass.kumi.systems/api/interpreter'
@@ -31,4 +33,5 @@ export const DATASETS = {
     'TRANSPORTS.DRONES.RESTRICTIONS:carte_restriction_drones_lf',
   droneLegend:
     'https://data.geopf.fr/annexes/ressources/legendes/TRANSPORTS.DRONES.RESTRICTIONS-legend.png',
+  openaipAttribution: 'OpenAIP (CC BY-NC 4.0) · https://www.openaip.net',
 } as const

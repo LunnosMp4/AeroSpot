@@ -50,6 +50,10 @@ export const useUiStore = defineStore('ui', () => {
     inspectorEnabled.value = !inspectorEnabled.value
   }
 
+  function setInspectorEnabled(value: boolean): void {
+    inspectorEnabled.value = value
+  }
+
   function setAddSpotMode(value: boolean): void {
     addSpotMode.value = value
   }
@@ -82,6 +86,7 @@ export const useUiStore = defineStore('ui', () => {
     setPanel,
     selectSpot,
     toggleInspector,
+    setInspectorEnabled,
     setAddSpotMode,
     pushToast,
     dismissToast,

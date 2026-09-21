@@ -130,6 +130,31 @@ async function handleApi(req, res, url) {
   return sendJson(res, 404, { error: 'Not found' })
 }
 
+const OPENAIP_UPSTREAM = 'https://storage.openaip.net/openaip-system-exports'
+
+async function proxyOpenaip(req, res, url) {
+  const upstream = OPENAIP_UPSTREAM + decodeURIComponent(url.pathname).replace(/^\/openaip/, '')
+  try {
+    const upstreamRes = await fetch(upstream)
+    if (!upstreamRes.ok) {
+      res.writeHead(upstreamRes.status, { 'Content-Type': 'text/plain; charset=utf-8' })
+      res.end('Not found')
+      return
+    }
+    const body = Buffer.from(await upstreamRes.arrayBuffer())
+    res.writeHead(200, {
+      'Content-Type': upstreamRes.headers.get('content-type') ?? 'application/json; charset=utf-8',
+      'Content-Length': body.length,
+      'Cache-Control': 'public, max-age=3600',
+    })
+    res.end(body)
+  } catch (error) {
+    console.warn(`[openaip] proxy error: ${error.message}`)
+    res.writeHead(502, { 'Content-Type': 'text/plain; charset=utf-8' })
+    res.end('Bad gateway')
+  }
+}
+
 function serveStatic(req, res, url) {
   let pathname = decodeURIComponent(url.pathname)
   if (pathname === '/') pathname = '/index.html'
@@ -175,6 +200,8 @@ const server = createServer(async (req, res) => {
   try {
     if (url.pathname.startsWith('/api/')) {
       await handleApi(req, res, url)
+    } else if (url.pathname.startsWith('/openaip/')) {
+      await proxyOpenaip(req, res, url)
     } else {
       serveStatic(req, res, url)
     }

@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import type { Coordinates } from '@/types'
 import { getPluginHost } from '@/plugins'
 import { useAirspaceStore } from '@/stores/airspace.store'
@@ -6,7 +6,11 @@ import { useHomeStore } from '@/stores/home.store'
 import { useMapStore } from '@/stores/map.store'
 import { useSpotsStore } from '@/stores/spots.store'
 import { useUiStore } from '@/stores/ui.store'
-import { bboxAround } from '@/utils/geo'
+
+/** Search radius (km) around the current map centre. */
+export const DISCOVERY_RADIUS_KM = 50
+
+export type DiscoveryPhase = 'idle' | 'searching' | 'legality'
 
 export function useSpotDiscovery() {
   const spotsStore = useSpotsStore()
@@ -17,18 +21,34 @@ export function useSpotDiscovery() {
 
   const loading = ref(false)
   const lastCount = ref(0)
+  const phase = ref<DiscoveryPhase>('idle')
 
+  /** Live step label so the user can see the search is still progressing. */
+  const statusLabel = computed(() => {
+    if (phase.value === 'searching') return 'Recherche OpenStreetMap…'
+    if (phase.value === 'legality') {
+      const p = airspace.legalityProgress
+      return p ? `Vérification des zones… ${p.done}/${p.total}` : 'Vérification des zones…'
+    }
+    return 'Rechercher dans cette zone'
+  })
+
+  /** Regulatory progress during the "legality" phase, otherwise null. */
+  const progress = computed(() =>
+    phase.value === 'legality' ? airspace.legalityProgress : null,
+  )
+
+  /** Where the user is currently looking — falls back to the base when the map isn't ready. */
   function discoveryCenter(): Coordinates | null {
-    if (home.coordinates) return home.coordinates
     const instance = mapStore.map
     if (instance) {
       const center = instance.getCenter()
       return { lng: center.lng, lat: center.lat }
     }
-    return null
+    return home.coordinates
   }
 
-  async function discover(radiusKm = 25): Promise<void> {
+  async function discover(radiusKm = DISCOVERY_RADIUS_KM): Promise<void> {
     const provider = getPluginHost().spotProviders.get('overpass')
     if (!provider) {
       ui.pushToast('Module de découverte indisponible.', 'error')
@@ -36,21 +56,25 @@ export function useSpotDiscovery() {
     }
     const origin = discoveryCenter()
     if (!origin) {
-      ui.pushToast('Définissez une base ou centrez la carte.', 'error')
+      ui.pushToast('Centrez la carte ou définissez une base.', 'error')
       return
     }
 
     loading.value = true
+    phase.value = 'searching'
     try {
       const found = await provider.fetch({
         home: home.home,
-        bbox: bboxAround(origin, 0.4, 0.3),
+        bbox: null,
         center: origin,
         radiusKm,
       })
 
       // Resolve official restrictions and drop anything inside a no-fly zone.
-      if (found.length > 0) await airspace.resolveForSpots(found)
+      if (found.length > 0) {
+        phase.value = 'legality'
+        await airspace.resolveForSpots(found)
+      }
       const legal = found.filter((spot) => airspace.bySpotId[spot.id]?.status !== 'prohibited')
       const rejected = found.length - legal.length
 
@@ -80,6 +104,7 @@ export function useSpotDiscovery() {
       )
     } finally {
       loading.value = false
+      phase.value = 'idle'
     }
   }
 
@@ -89,5 +114,5 @@ export function useSpotDiscovery() {
     void spotsStore.computeRoutes(true)
   }
 
-  return { discover, clear, loading, lastCount }
+  return { discover, clear, loading, lastCount, phase, statusLabel, progress }
 }

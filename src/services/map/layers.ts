@@ -16,6 +16,12 @@ export const HOME_LAYER = 'aerospot-home-circle'
 export const INSPECT_SOURCE = 'aerospot-inspect'
 export const INSPECT_LAYER = 'aerospot-inspect-circle'
 
+export const POSITION_SOURCE = 'aerospot-position'
+export const POSITION_HALO_LAYER = 'aerospot-position-halo'
+export const POSITION_LAYER = 'aerospot-position-dot'
+
+export const HOME_ICON_ID = 'aerospot-home-icon'
+
 export interface SpotFeatureProps {
   id: string
   name: string
@@ -130,7 +136,45 @@ export function setSpotsData(map: MapLibreMap, spots: Spot[], selectedId: string
   setSourceData(map, SPOT_SOURCE, { type: 'FeatureCollection', features })
 }
 
+interface IconImage {
+  width: number
+  height: number
+  data: Uint8ClampedArray
+}
+
+/** Draws a small house glyph (blue body + white outline) used for the home marker. */
+function createHouseIcon(): IconImage {
+  const size = 32
+  const canvas = document.createElement('canvas')
+  canvas.width = size
+  canvas.height = size
+  const ctx = canvas.getContext('2d')
+  if (ctx) {
+    ctx.clearRect(0, 0, size, size)
+    ctx.beginPath()
+    ctx.moveTo(16, 2)
+    ctx.lineTo(30, 14)
+    ctx.lineTo(30, 28)
+    ctx.lineTo(2, 28)
+    ctx.lineTo(2, 14)
+    ctx.closePath()
+    ctx.fillStyle = '#6d8cff'
+    ctx.fill()
+    ctx.lineWidth = 2.5
+    ctx.strokeStyle = '#ffffff'
+    ctx.stroke()
+    ctx.fillStyle = '#ffffff'
+    ctx.fillRect(13, 20, 6, 8)
+  }
+  const imageData = (ctx ?? canvas.getContext('2d'))!.getImageData(0, 0, size, size)
+  return { width: size, height: size, data: imageData.data }
+}
+
 export function addHomeLayers(map: MapLibreMap): void {
+
+  if (!map.hasImage(HOME_ICON_ID)) {
+    map.addImage(HOME_ICON_ID, createHouseIcon(), { pixelRatio: 2 })
+  }
 
   if (!map.getSource(HOME_SOURCE)) {
     map.addSource(HOME_SOURCE, { type: 'geojson', data: EMPTY })
@@ -141,24 +185,26 @@ export function addHomeLayers(map: MapLibreMap): void {
       type: 'circle',
       source: HOME_SOURCE,
       paint: {
-        'circle-radius': 16,
+        'circle-radius': 18,
         'circle-color': 'rgba(0,0,0,0)',
         'circle-stroke-width': 1.5,
         'circle-stroke-color': '#6d8cff',
-        'circle-stroke-opacity': 0.5,
+        'circle-stroke-opacity': 0.4,
       },
     })
   }
   if (!map.getLayer(HOME_LAYER)) {
     map.addLayer({
       id: HOME_LAYER,
-      type: 'circle',
+      type: 'symbol',
       source: HOME_SOURCE,
-      paint: {
-        'circle-radius': 7,
-        'circle-color': '#6d8cff',
-        'circle-stroke-width': 2.5,
-        'circle-stroke-color': '#ffffff',
+      layout: {
+        'icon-image': HOME_ICON_ID,
+        'icon-size': 1.15,
+        'icon-anchor': 'bottom',
+        'icon-offset': [0, -3],
+        'icon-allow-overlap': true,
+        'icon-ignore-placement': true,
       },
     })
   }
@@ -215,6 +261,51 @@ export function setInspectData(
   setSourceData(map, INSPECT_SOURCE, { type: 'FeatureCollection', features })
 }
 
+export function addPositionLayers(map: MapLibreMap): void {
+  if (!map.getSource(POSITION_SOURCE)) {
+    map.addSource(POSITION_SOURCE, { type: 'geojson', data: EMPTY })
+  }
+  if (!map.getLayer(POSITION_HALO_LAYER)) {
+    map.addLayer({
+      id: POSITION_HALO_LAYER,
+      type: 'circle',
+      source: POSITION_SOURCE,
+      paint: {
+        'circle-radius': 15,
+        'circle-color': 'rgba(56, 189, 248, 0.28)',
+        'circle-stroke-width': 0,
+      },
+    })
+  }
+  if (!map.getLayer(POSITION_LAYER)) {
+    map.addLayer({
+      id: POSITION_LAYER,
+      type: 'circle',
+      source: POSITION_SOURCE,
+      paint: {
+        'circle-radius': ['interpolate', ['linear'], ['zoom'], 4, 4.5, 12, 8, 16, 11],
+        'circle-color': '#38bdf8',
+        'circle-stroke-width': 2.5,
+        'circle-stroke-color': '#ffffff',
+      },
+    })
+  }
+}
+
+export function setPositionData(map: MapLibreMap, coordinates: Coordinates | null): void {
+  if (!map.getSource(POSITION_SOURCE)) return
+  const features: GeoJSON.Feature[] = coordinates
+    ? [
+        {
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [coordinates.lng, coordinates.lat] },
+          properties: {},
+        },
+      ]
+    : []
+  setSourceData(map, POSITION_SOURCE, { type: 'FeatureCollection', features })
+}
+
 const OVERLAY_ORDER = [
   SPOT_HIT_LAYER,
   SPOT_LAYER,
@@ -223,6 +314,8 @@ const OVERLAY_ORDER = [
   HOME_RING_LAYER,
   HOME_LAYER,
   INSPECT_LAYER,
+  POSITION_HALO_LAYER,
+  POSITION_LAYER,
 ]
 
 /** Keep markers above plugin overlays (e.g. the airspace raster). */

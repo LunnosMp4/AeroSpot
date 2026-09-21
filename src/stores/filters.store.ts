@@ -4,12 +4,30 @@ import type { FilterCriteria, LegalStatus, SortBy, SpotCategory } from '@/types'
 import { DEFAULT_FILTERS } from '@/types'
 import { STORAGE_KEYS, readJSON, writeJSON } from '@/services/storage'
 
+const FILTERS_VERSION = 3
+
+interface PersistedFilters extends Partial<FilterCriteria> {
+  version?: number
+}
+
 export const useFiltersStore = defineStore('filters', () => {
-  const saved = readJSON<Partial<FilterCriteria>>(STORAGE_KEYS.filters, {})
+  const saved = readJSON<PersistedFilters>(STORAGE_KEYS.filters, {})
+
+  // Migrate legacy criteria so newly introduced categories (e.g. paragliding)
+  // become visible instead of staying hidden by an outdated persisted list.
+  if (Object.keys(saved).length > 0 && saved.version !== FILTERS_VERSION) {
+    saved.categories = [...new Set([...(saved.categories ?? []), ...DEFAULT_FILTERS.categories])]
+    saved.version = FILTERS_VERSION
+    writeJSON<PersistedFilters>(STORAGE_KEYS.filters, saved)
+  }
+
   const criteria = ref<FilterCriteria>({ ...DEFAULT_FILTERS, ...saved })
 
   function persist(): void {
-    writeJSON<FilterCriteria>(STORAGE_KEYS.filters, criteria.value)
+    writeJSON<PersistedFilters>(STORAGE_KEYS.filters, {
+      ...criteria.value,
+      version: FILTERS_VERSION,
+    })
   }
 
   function patch(partial: Partial<FilterCriteria>): void {

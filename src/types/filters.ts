@@ -15,7 +15,7 @@ export interface FilterCriteria {
 
 export const DEFAULT_FILTERS: FilterCriteria = {
   maxDriveMin: MAX_DRIVE_MIN,
-  categories: ['bando', 'freestyle', 'cinematic', 'race', 'park'],
+  categories: ['bando', 'ruins', 'freestyle', 'cinematic', 'race', 'park', 'paragliding'],
   // Prohibited zones are hidden by default: only surface legal spots.
   legalStatuses: ['clear', 'limited', 'unknown'],
   savedOnly: false,

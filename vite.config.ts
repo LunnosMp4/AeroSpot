@@ -46,6 +46,11 @@ export default defineConfig({
         target: 'http://localhost:8787',
         changeOrigin: true,
       },
+      '/openaip': {
+        target: 'https://storage.openaip.net/openaip-system-exports',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/openaip/, ''),
+      },
     },
   },
 })

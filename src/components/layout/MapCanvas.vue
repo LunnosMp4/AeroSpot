@@ -8,17 +8,20 @@ import { applyBasemap, buildStyle } from '@/services/map/mapProvider'
 import {
   addHomeLayers,
   addInspectLayer,
+  addPositionLayers,
   addSpotLayers,
   raiseOverlayLayers,
   SPOT_HIT_LAYER,
   SPOT_LAYER,
   setHomeData,
   setInspectData,
+  setPositionData,
   setSpotsData,
 } from '@/services/map/layers'
 import { useAirspaceStore } from '@/stores/airspace.store'
 import { useHomeStore } from '@/stores/home.store'
 import { useMapStore } from '@/stores/map.store'
+import { usePositionStore } from '@/stores/position.store'
 import { useSettingsStore } from '@/stores/settings.store'
 import { useSpotsStore } from '@/stores/spots.store'
 import { useUiStore } from '@/stores/ui.store'
@@ -31,6 +34,7 @@ const spotsStore = useSpotsStore()
 const homeStore = useHomeStore()
 const airspace = useAirspaceStore()
 const ui = useUiStore()
+const positionStore = usePositionStore()
 
 const container = ref<HTMLDivElement | null>(null)
 let map: MapLibreMap | null = null
@@ -79,6 +83,11 @@ function applyInspectData(): void {
   setInspectData(map, result?.coordinates ?? null, result?.status ?? 'unknown')
 }
 
+function applyPositionData(): void {
+  if (!map) return
+  setPositionData(map, positionStore.position)
+}
+
 function handleStyleReady(): void {
   if (!map) return
   mapStore.setReady(true)
@@ -87,11 +96,13 @@ function handleStyleReady(): void {
   addSpotLayers(map)
   addHomeLayers(map)
   addInspectLayer(map)
+  addPositionLayers(map)
   syncPluginLayers()
 
   applySpotData()
   applyHomeData()
   applyInspectData()
+  applyPositionData()
 }
 
 function updateCursor(): void {
@@ -238,6 +249,7 @@ onMounted(() => {
   watch([() => spotsStore.visibleSpots, () => ui.selectedSpotId], applySpotData)
   watch(() => homeStore.home?.coordinates, applyHomeData)
   watch(() => airspace.inspected, applyInspectData)
+  watch(() => positionStore.position, applyPositionData)
   watch([() => ui.addSpotMode, () => ui.inspectorEnabled], updateCursor)
 })
 

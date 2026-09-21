@@ -26,6 +26,8 @@ const GROUPS = [
   (b) =>
     `nwr["building"="abandoned"](${b});nwr["man_made"="works"]["abandoned"="yes"](${b});nwr["landuse"="industrial"]["abandoned"="yes"](${b});`,
   (b) => `nwr["historic"="ruins"](${b});nwr["leisure"="track"](${b});nwr["sport"="motocross"](${b});`,
+  (b) =>
+    `nwr["sport"="free_flying"](${b});nwr["sport"="paragliding"](${b});nwr["sport"="hang_gliding"](${b});nwr["free_flying:site"](${b});nwr["free_flying:paragliding"="yes"](${b});`,
 ]
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -91,32 +93,65 @@ async function overpass(query) {
 
 const TAG_KEYS = ['abandoned', 'building', 'historic', 'landuse', 'man_made', 'leisure', 'sport']
 
+function isFreeFlying(tags) {
+  const sports = (tags.sport ?? '').split(';').map((value) => value.trim())
+  return (
+    sports.includes('free_flying') ||
+    sports.includes('paragliding') ||
+    sports.includes('hang_gliding') ||
+    tags['free_flying:site'] != null ||
+    tags['free_flying:paragliding'] === 'yes'
+  )
+}
+
+function defaultName(tags) {
+  if (tags.name) return tags.name
+  if (isFreeFlying(tags)) {
+    const site = tags['free_flying:site']
+    if (site === 'takeoff') return 'Décollage parapente'
+    if (site === 'landing') return 'Atterrissage parapente'
+    if (site === 'towing') return 'Site de treuil'
+    if (site === 'training') return 'Pente école parapente'
+    return 'Site de parapente'
+  }
+  if (tags.historic === 'ruins') return 'Ruines'
+  if (tags.building === 'abandoned') return 'Bâtiment abandonné'
+  if (tags.sport === 'motocross') return 'Terrain de motocross'
+  if (tags.leisure === 'track') return 'Piste'
+  if (tags.man_made === 'works') return 'Site industriel abandonné'
+  return 'Site industriel'
+}
+
 function toSpot(element, inFrance) {
   const lat = element.lat ?? element.center?.lat
   const lng = element.lon ?? element.center?.lon
   if (lat == null || lng == null || !inFrance(lng, lat)) return null
   const tags = element.tags ?? {}
+  const freeFlying = isFreeFlying(tags)
   const isTrack = tags.sport === 'motocross' || tags.leisure === 'track'
-  const name =
-    tags.name ??
-    (tags.historic === 'ruins'
-      ? 'Ruines'
-      : tags.building === 'abandoned'
-        ? 'Bâtiment abandonné'
-        : tags.sport === 'motocross'
-          ? 'Terrain de motocross'
-          : tags.leisure === 'track'
-            ? 'Piste'
-            : tags.man_made === 'works'
-              ? 'Site industriel abandonné'
-              : 'Site industriel')
+  const name = defaultName(tags)
   const spotTags = ['osm']
-  for (const key of TAG_KEYS) if (tags[key]) spotTags.push(tags[key])
+  if (freeFlying) {
+    spotTags.push('parapente')
+    const site = tags['free_flying:site']
+    if (site === 'takeoff') spotTags.push('décollage')
+    else if (site === 'landing') spotTags.push('atterrissage')
+    else if (site) spotTags.push(site)
+  } else {
+    for (const key of TAG_KEYS) if (tags[key]) spotTags.push(tags[key])
+  }
   return {
     id: `osm-${element.type}-${element.id}`,
     name,
     city: tags['addr:city'],
-    category: isTrack ? 'race' : 'bando',
+    category:
+      name === 'Ruines'
+        ? 'ruins'
+        : freeFlying
+          ? 'paragliding'
+          : isTrack
+            ? 'race'
+            : 'bando',
     tags: [...new Set(spotTags)].slice(0, 5),
     coordinates: { lng: Math.round(lng * 1e6) / 1e6, lat: Math.round(lat * 1e6) / 1e6 },
     altitudeCeilingM: null,

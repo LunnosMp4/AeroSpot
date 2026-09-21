@@ -7,6 +7,7 @@ import AirspaceLegend from '@/components/airspace/AirspaceLegend.vue'
 import LegalityInspector from '@/components/airspace/LegalityInspector.vue'
 import MapCanvas from '@/components/layout/MapCanvas.vue'
 import MapControls from '@/components/layout/MapControls.vue'
+import SearchHereButton from '@/components/layout/SearchHereButton.vue'
 import Sidebar from '@/components/sidebar/Sidebar.vue'
 import SpotDetailSheet from '@/components/spot/SpotDetailSheet.vue'
 import Toasts from '@/components/ui/Toasts.vue'
@@ -125,6 +126,12 @@ watch(
           class="pointer-events-none absolute right-[max(1rem,env(safe-area-inset-right))] top-[max(1rem,env(safe-area-inset-top))]"
         >
           <MapControls />
+        </div>
+
+        <div
+          class="pointer-events-none absolute inset-x-0 bottom-[max(4.5rem,env(safe-area-inset-bottom))] flex justify-center sm:bottom-8"
+        >
+          <SearchHereButton />
         </div>
 
         <div

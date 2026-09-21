@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { ChevronDown } from '@lucide/vue'
 import { DATASETS } from '@/services/config'
 import { useSettingsStore } from '@/stores/settings.store'
@@ -7,17 +7,27 @@ import { useSettingsStore } from '@/stores/settings.store'
 const settings = useSettingsStore()
 const open = ref(false)
 
-const items = [
+const frVisible = computed(() => settings.isLayerVisible('airspace'))
+const intlVisible = computed(() => settings.isLayerVisible('airspace-international'))
+const visible = computed(() => frVisible.value || intlVisible.value)
+
+const frItems = [
   { color: '#ef4444', label: 'Rouge — vol interdit (0 m)' },
   { color: '#f97316', label: 'Orange — hauteur réduite (30/50 m)' },
   { color: '#eab308', label: 'Jaune — restriction modérée (100 m)' },
   { color: '#22c55e', label: 'Vert / clair — plafond standard (120 m)' },
 ]
+
+const intlItems = [
+  { color: '#ef4444', label: 'Rouge — zone interdite / réglementée / dangereuse' },
+  { color: '#f59e0b', label: 'Ambre — espace contrôlé (CTR, TMA, CTA)' },
+  { color: '#3b82f6', label: 'Bleu — autres espaces aériens' },
+]
 </script>
 
 <template>
   <div
-    v-if="settings.isLayerVisible('airspace')"
+    v-if="visible"
     class="glass-soft pointer-events-auto w-[min(16rem,calc(100vw-5rem))] rounded-xl sm:w-64"
   >
     <button
@@ -33,23 +43,41 @@ const items = [
       />
     </button>
 
-    <div v-if="open" class="space-y-2.5 border-t border-line/70 px-3 py-2.5">
-      <img
-        :src="DATASETS.droneLegend"
-        alt="Légende officielle des restrictions drones DGAC"
-        class="w-full rounded-md bg-white/90 p-1"
-        loading="lazy"
-      />
-      <ul class="space-y-1.5 text-xs text-fg-muted">
-        <li v-for="item in items" :key="item.label" class="flex items-center gap-2">
-          <span class="size-2.5 shrink-0 rounded-sm" :style="{ backgroundColor: item.color }" />
-          {{ item.label }}
-        </li>
-      </ul>
-      <p class="text-[10px] leading-relaxed text-fg-subtle">
-        Source : DGAC · IGN Géoplateforme. Les restrictions temporaires ne sont pas couvertes —
-        consultez sia.aviation-civile.gouv.fr.
-      </p>
+    <div v-if="open" class="space-y-3 border-t border-line/70 px-3 py-2.5">
+      <template v-if="frVisible">
+        <img
+          :src="DATASETS.droneLegend"
+          alt="Légende officielle des restrictions drones DGAC"
+          class="w-full rounded-md bg-white/90 p-1"
+          loading="lazy"
+        />
+        <ul class="space-y-1.5 text-xs text-fg-muted">
+          <li v-for="item in frItems" :key="item.label" class="flex items-center gap-2">
+            <span class="size-2.5 shrink-0 rounded-sm" :style="{ backgroundColor: item.color }" />
+            {{ item.label }}
+          </li>
+        </ul>
+        <p class="text-[10px] leading-relaxed text-fg-subtle">
+          Source : DGAC · IGN Géoplateforme. Les restrictions temporaires ne sont pas couvertes —
+          consultez sia.aviation-civile.gouv.fr.
+        </p>
+      </template>
+
+      <template v-if="intlVisible">
+        <div class="border-t border-line/70 pt-2.5">
+          <p class="panel-title mb-1.5">Espace aérien (Europe)</p>
+          <ul class="space-y-1.5 text-xs text-fg-muted">
+            <li v-for="item in intlItems" :key="item.label" class="flex items-center gap-2">
+              <span class="size-2.5 shrink-0 rounded-sm" :style="{ backgroundColor: item.color }" />
+              {{ item.label }}
+            </li>
+          </ul>
+          <p class="mt-1.5 text-[10px] leading-relaxed text-fg-subtle">
+            Source : OpenAIP (CC BY-NC 4.0). Espace aérien de l'aviation habitée — approximation,
+            non spécifique aux drones. Consultez les sources nationales officielles avant tout vol.
+          </p>
+        </div>
+      </template>
     </div>
   </div>
 </template>

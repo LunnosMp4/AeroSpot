@@ -1,10 +1,10 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import type { Coordinates, LegalityResult, Spot } from '@/types'
-import { getRestrictionsInBBox, inspectLegality } from '@/services/api/ignAirspace'
+import { getRestrictionsInBBox, inspectLegality } from '@/services/api/airspace/providers'
 import { getCachedLegality, setCachedLegality } from '@/services/legalityCache'
 import { resolveLegality } from '@/services/regulation'
-import { pointInMultiPolygon } from '@/utils/geo'
+import { isInFrance, pointInMultiPolygon } from '@/utils/geo'
 
 const CONCURRENCY = 3
 const TILE_SIZE = 0.4
@@ -35,6 +35,7 @@ export const useAirspaceStore = defineStore('airspace', () => {
 
   const bySpotId = ref<Record<string, LegalityResult>>({})
   const legalityLoading = ref(false)
+  const legalityProgress = ref<{ done: number; total: number } | null>(null)
 
   async function inspectPoint(coordinates: Coordinates): Promise<void> {
     inspectLoading.value = true
@@ -73,10 +74,18 @@ export const useAirspaceStore = defineStore('airspace', () => {
   async function resolveForSpots(spots: Spot[], signal?: AbortSignal): Promise<void> {
     if (spots.length === 0) {
       bySpotId.value = {}
+      legalityProgress.value = null
       return
     }
 
     legalityLoading.value = true
+    const total = spots.length
+    let done = 0
+    const bump = (): void => {
+      legalityProgress.value = { done: ++done, total }
+    }
+    legalityProgress.value = { done: 0, total }
+
     const next: Record<string, LegalityResult> = { ...bySpotId.value }
 
     const tiles = new Map<string, Tile>()
@@ -84,6 +93,7 @@ export const useAirspaceStore = defineStore('airspace', () => {
       const cached = getCachedLegality(spot.coordinates)
       if (cached) {
         next[spot.id] = cached
+        bump()
         continue
       }
       const key = tileKey(spot.coordinates)
@@ -112,6 +122,7 @@ export const useAirspaceStore = defineStore('airspace', () => {
           for (const spot of tile.spots) {
             if (signal?.aborted) return
             await resolveSpot(spot, next, signal)
+            bump()
           }
           continue
         }
@@ -129,17 +140,22 @@ export const useAirspaceStore = defineStore('airspace', () => {
             status,
             restrictions: hits,
             checkedAt: new Date().toISOString(),
-            source: 'wfs',
+            source: isInFrance(spot.coordinates) ? 'ign-fr' : 'openaip',
           }
           next[spot.id] = result
           setCachedLegality(spot.coordinates, result)
+          bump()
         }
       }
     }
 
-    await Promise.all(Array.from({ length: Math.min(CONCURRENCY, tiles.size) }, worker))
-    bySpotId.value = next
-    legalityLoading.value = false
+    try {
+      await Promise.all(Array.from({ length: Math.min(CONCURRENCY, tiles.size) }, worker))
+      bySpotId.value = next
+    } finally {
+      legalityLoading.value = false
+      legalityProgress.value = null
+    }
   }
 
   function legalityFor(spotId: string): LegalityResult | null {
@@ -152,6 +168,7 @@ export const useAirspaceStore = defineStore('airspace', () => {
     inspectError,
     bySpotId,
     legalityLoading,
+    legalityProgress,
     inspectPoint,
     clearInspection,
     resolveForSpots,

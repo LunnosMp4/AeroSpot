@@ -4,6 +4,7 @@ export const STORAGE_KEYS = {
   home: `${PREFIX}.home.v1`,
   userSpots: `${PREFIX}.spots.user.v1`,
   saved: `${PREFIX}.saved.v1`,
+  savedSpots: `${PREFIX}.savedSpots.v1`,
   filters: `${PREFIX}.filters.v1`,
   plugins: `${PREFIX}.plugins.v1`,
   settings: `${PREFIX}.settings.v1`,

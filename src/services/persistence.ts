@@ -20,6 +20,12 @@ function localSaved(): string[] {
 function setLocalSaved(ids: string[]): void {
   writeJSON<string[]>(STORAGE_KEYS.saved, ids)
 }
+function localSavedSpots(): Spot[] {
+  return readJSON<Spot[]>(STORAGE_KEYS.savedSpots, [])
+}
+function setLocalSavedSpots(spots: Spot[]): void {
+  writeJSON<Spot[]>(STORAGE_KEYS.savedSpots, spots)
+}
 
 /**
  * Shared persistence when the app is served by the AeroSpot backend; otherwise
@@ -49,8 +55,8 @@ export const persistence = {
     if (persistenceMode.value === 'server') {
       try {
         await backend.createSpot(spot)
-      } catch {
-        /* local cache already updated */
+      } catch (error) {
+        console.warn('[AeroSpot] enregistrement serveur échoué, copie locale conservée:', error)
       }
     }
   },
@@ -77,6 +83,22 @@ export const persistence = {
       }
     }
     return localSaved()
+  },
+
+  /**
+   * Full spot data for saved spots, so a saved spot stays on the map even after
+   * the discovered spots are replaced or cleared.
+   */
+  async loadSavedSpots(): Promise<Spot[]> {
+    return localSavedSpots()
+  },
+
+  async saveSpotData(spot: Spot): Promise<void> {
+    setLocalSavedSpots([spot, ...localSavedSpots().filter((item) => item.id !== spot.id)])
+  },
+
+  async unsaveSpotData(id: string): Promise<void> {
+    setLocalSavedSpots(localSavedSpots().filter((item) => item.id !== id))
   },
 
   async save(id: string): Promise<void> {

@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import {
   Compass,
   Crosshair,
+  Globe,
   Layers,
   LocateFixed,
   LoaderCircle,
@@ -16,12 +17,14 @@ import { getPluginHost } from '@/plugins'
 import { BASEMAP_ORDER } from '@/services/map/mapProvider'
 import { useGeolocation } from '@/composables/useGeolocation'
 import { useMapStore } from '@/stores/map.store'
+import { usePositionStore } from '@/stores/position.store'
 import { useSettingsStore } from '@/stores/settings.store'
 import { useUiStore } from '@/stores/ui.store'
 
 const mapStore = useMapStore()
 const settings = useSettingsStore()
 const ui = useUiStore()
+const positionStore = usePositionStore()
 const { locate, loading } = useGeolocation()
 const geolocating = ref(false)
 
@@ -33,6 +36,7 @@ const layerDefs = computed(() =>
 
 const LAYER_ICONS: Record<string, unknown> = {
   airspace: ShieldAlert,
+  'airspace-international': Globe,
   isochrone: Route,
 }
 
@@ -54,6 +58,7 @@ async function onLocate(): Promise<void> {
   const coordinates = await locate()
   geolocating.value = false
   if (coordinates) {
+    positionStore.setPosition(coordinates)
     mapStore.flyTo(coordinates, 13)
   } else {
     ui.pushToast('Position indisponible.', 'error')

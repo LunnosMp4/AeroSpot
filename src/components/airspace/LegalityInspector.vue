@@ -14,6 +14,11 @@ const result = computed(() => airspace.inspected)
 const statusColor = computed(() =>
   result.value ? STATUS_COLORS[result.value.status] : STATUS_COLORS.unknown,
 )
+
+function close(): void {
+  ui.setInspectorEnabled(false)
+  airspace.clearInspection()
+}
 </script>
 
 <template>
@@ -31,7 +36,7 @@ const statusColor = computed(() =>
         class="rounded-md p-1.5 text-fg-subtle transition-colors hover:text-fg sm:p-0.5"
         aria-label="Fermer l'inspecteur"
         title="Fermer"
-        @click="ui.toggleInspector()"
+        @click="close"
       >
         <X class="size-3.5" />
       </button>
@@ -92,7 +97,8 @@ const statusColor = computed(() =>
         </p>
 
         <p class="text-[10px] text-fg-subtle">
-          Vérifié le {{ formatDateTime(result.checkedAt) }} · DGAC / IGN
+          Vérifié le {{ formatDateTime(result.checkedAt) }} ·
+          {{ result.source === 'openaip' ? 'OpenAIP (approximation)' : 'DGAC / IGN' }}
         </p>
       </div>
 
