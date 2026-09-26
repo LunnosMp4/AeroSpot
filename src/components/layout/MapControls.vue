@@ -9,6 +9,7 @@ import {
   LoaderCircle,
   Moon,
   Route,
+  Ruler,
   Satellite,
   ShieldAlert,
   Sun,
@@ -18,6 +19,7 @@ import { BASEMAP_ORDER } from '@/services/map/mapProvider'
 import { useGeolocation } from '@/composables/useGeolocation'
 import { useMapStore } from '@/stores/map.store'
 import { usePositionStore } from '@/stores/position.store'
+import { useMeasureStore } from '@/stores/measure.store'
 import { useSettingsStore } from '@/stores/settings.store'
 import { useUiStore } from '@/stores/ui.store'
 
@@ -25,6 +27,7 @@ const mapStore = useMapStore()
 const settings = useSettingsStore()
 const ui = useUiStore()
 const positionStore = usePositionStore()
+const measure = useMeasureStore()
 const { locate, loading } = useGeolocation()
 const geolocating = ref(false)
 
@@ -69,6 +72,11 @@ function cycleBasemap(): void {
   const index = BASEMAP_ORDER.indexOf(settings.basemap)
   const next = BASEMAP_ORDER[(index + 1) % BASEMAP_ORDER.length]
   settings.setBasemap(next)
+}
+
+function toggleMeasure(): void {
+  measure.toggle()
+  if (measure.enabled) ui.setAddSpotMode(false)
 }
 </script>
 
@@ -132,6 +140,19 @@ function cycleBasemap(): void {
       @click="ui.toggleInspector()"
     >
       <Crosshair class="size-4" />
+    </button>
+
+    <span class="mx-2 my-0.5 h-px bg-line" />
+
+    <button
+      type="button"
+      class="ctrl-btn"
+      :class="measure.enabled ? 'text-accent' : 'text-fg-subtle'"
+      aria-label="Mesurer une distance"
+      title="Mesurer une distance"
+      @click="toggleMeasure"
+    >
+      <Ruler class="size-4" />
     </button>
   </div>
 </template>

@@ -9,6 +9,7 @@ import {
   addHomeLayers,
   addInspectLayer,
   addPositionLayers,
+  addMeasureLayers,
   addSpotLayers,
   raiseOverlayLayers,
   SPOT_HIT_LAYER,
@@ -16,12 +17,14 @@ import {
   setHomeData,
   setInspectData,
   setPositionData,
+  setMeasureData,
   setSpotsData,
 } from '@/services/map/layers'
 import { useAirspaceStore } from '@/stores/airspace.store'
 import { useHomeStore } from '@/stores/home.store'
 import { useMapStore } from '@/stores/map.store'
 import { usePositionStore } from '@/stores/position.store'
+import { useMeasureStore } from '@/stores/measure.store'
 import { useSettingsStore } from '@/stores/settings.store'
 import { useSpotsStore } from '@/stores/spots.store'
 import { useUiStore } from '@/stores/ui.store'
@@ -35,6 +38,7 @@ const homeStore = useHomeStore()
 const airspace = useAirspaceStore()
 const ui = useUiStore()
 const positionStore = usePositionStore()
+const measure = useMeasureStore()
 
 const container = ref<HTMLDivElement | null>(null)
 let map: MapLibreMap | null = null
@@ -87,6 +91,10 @@ function applyPositionData(): void {
   if (!map) return
   setPositionData(map, positionStore.position)
 }
+function applyMeasureData(): void {
+  if (!map) return
+  setMeasureData(map, measure.points)
+}
 
 function handleStyleReady(): void {
   if (!map) return
@@ -97,17 +105,20 @@ function handleStyleReady(): void {
   addHomeLayers(map)
   addInspectLayer(map)
   addPositionLayers(map)
+  addMeasureLayers(map)
   syncPluginLayers()
 
   applySpotData()
   applyHomeData()
   applyInspectData()
   applyPositionData()
+  applyMeasureData()
 }
 
 function updateCursor(): void {
   if (!map) return
-  map.getCanvas().style.cursor = ui.addSpotMode || ui.inspectorEnabled ? 'crosshair' : ''
+  map.getCanvas().style.cursor =
+    ui.addSpotMode || ui.inspectorEnabled || measure.enabled ? 'crosshair' : ''
 }
 
 function onMapClick(event: MapMouseEvent): void {
@@ -120,6 +131,11 @@ function onMapClick(event: MapMouseEvent): void {
 
   if (ui.addSpotMode) {
     emit('pick-coordinates', coordinates)
+    return
+  }
+
+  if (measure.enabled) {
+    measure.addPoint(coordinates)
     return
   }
 
@@ -229,7 +245,9 @@ onMounted(() => {
   map.on('click', onMapClick)
   map.on('contextmenu', onContextMenu)
   map.on('mouseenter', SPOT_LAYER, () => {
-    if (map && !ui.addSpotMode && !ui.inspectorEnabled) map.getCanvas().style.cursor = 'pointer'
+    if (map && !ui.addSpotMode && !ui.inspectorEnabled && !measure.enabled) {
+      map.getCanvas().style.cursor = 'pointer'
+    }
   })
   map.on('mouseleave', SPOT_LAYER, updateCursor)
 
@@ -251,6 +269,11 @@ onMounted(() => {
   watch(() => airspace.inspected, applyInspectData)
   watch(() => positionStore.position, applyPositionData)
   watch([() => ui.addSpotMode, () => ui.inspectorEnabled], updateCursor)
+  watch(() => measure.points, applyMeasureData, { deep: true })
+  watch(
+    [() => ui.addSpotMode, () => ui.inspectorEnabled, () => measure.enabled],
+    updateCursor,
+  )
 })
 
 onBeforeUnmount(() => {

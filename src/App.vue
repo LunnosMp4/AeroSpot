@@ -8,12 +8,14 @@ import LegalityInspector from '@/components/airspace/LegalityInspector.vue'
 import MapCanvas from '@/components/layout/MapCanvas.vue'
 import MapControls from '@/components/layout/MapControls.vue'
 import SearchHereButton from '@/components/layout/SearchHereButton.vue'
+import MeasurePanel from '@/components/layout/MeasurePanel.vue'
 import Sidebar from '@/components/sidebar/Sidebar.vue'
 import SpotDetailSheet from '@/components/spot/SpotDetailSheet.vue'
 import Toasts from '@/components/ui/Toasts.vue'
 import { useIsMobile } from '@/composables/useMediaQuery'
 import { useAirspaceStore } from '@/stores/airspace.store'
 import { useHomeStore } from '@/stores/home.store'
+import { useMeasureStore } from '@/stores/measure.store'
 import { useSpotsStore } from '@/stores/spots.store'
 import { useUiStore } from '@/stores/ui.store'
 import { persistence } from '@/services/persistence'
@@ -22,6 +24,7 @@ const spotsStore = useSpotsStore()
 const airspace = useAirspaceStore()
 const homeStore = useHomeStore()
 const ui = useUiStore()
+const measure = useMeasureStore()
 
 const isMobile = useIsMobile()
 watch(isMobile, (value) => ui.setMobile(value), { immediate: true })
@@ -40,6 +43,7 @@ function onPickCoordinates(coordinates: Coordinates): void {
 }
 
 function startAddSpot(): void {
+  measure.setEnabled(false)
   ui.setAddSpotMode(true)
   ui.pushToast('Cliquez sur la carte pour placer votre spot.', 'info')
 }
@@ -137,6 +141,7 @@ watch(
         <div
           class="pointer-events-none absolute bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-[max(0.75rem,env(safe-area-inset-left))] flex flex-col items-start gap-2 sm:bottom-16 sm:left-4 sm:max-w-[min(288px,calc(100vw-2rem))]"
         >
+          <MeasurePanel />
           <LegalityInspector />
           <AirspaceLegend v-show="!(isMobile && inspectorVisible)" />
         </div>

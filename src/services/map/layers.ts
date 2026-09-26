@@ -21,6 +21,10 @@ export const POSITION_HALO_LAYER = 'aerospot-position-halo'
 export const POSITION_LAYER = 'aerospot-position-dot'
 
 export const HOME_ICON_ID = 'aerospot-home-icon'
+export const MEASURE_SOURCE = 'aerospot-measure'
+export const MEASURE_LINE_LAYER = 'aerospot-measure-line'
+export const MEASURE_POINT_LAYER = 'aerospot-measure-point'
+export const MEASURE_COLOR = '#f0a83c'
 
 export interface SpotFeatureProps {
   id: string
@@ -291,6 +295,39 @@ export function addPositionLayers(map: MapLibreMap): void {
     })
   }
 }
+export function addMeasureLayers(map: MapLibreMap): void {
+  if (!map.getSource(MEASURE_SOURCE)) {
+    map.addSource(MEASURE_SOURCE, { type: 'geojson', data: EMPTY })
+  }
+  if (!map.getLayer(MEASURE_LINE_LAYER)) {
+    map.addLayer({
+      id: MEASURE_LINE_LAYER,
+      type: 'line',
+      source: MEASURE_SOURCE,
+      filter: ['==', ['geometry-type'], 'LineString'],
+      layout: { 'line-cap': 'round', 'line-join': 'round' },
+      paint: {
+        'line-color': MEASURE_COLOR,
+        'line-width': 2,
+        'line-dasharray': [2, 1.5],
+      },
+    })
+  }
+  if (!map.getLayer(MEASURE_POINT_LAYER)) {
+    map.addLayer({
+      id: MEASURE_POINT_LAYER,
+      type: 'circle',
+      source: MEASURE_SOURCE,
+      filter: ['==', ['geometry-type'], 'Point'],
+      paint: {
+        'circle-radius': 5,
+        'circle-color': '#08080a',
+        'circle-stroke-width': 2.5,
+        'circle-stroke-color': MEASURE_COLOR,
+      },
+    })
+  }
+}
 
 export function setPositionData(map: MapLibreMap, coordinates: Coordinates | null): void {
   if (!map.getSource(POSITION_SOURCE)) return
@@ -306,6 +343,26 @@ export function setPositionData(map: MapLibreMap, coordinates: Coordinates | nul
   setSourceData(map, POSITION_SOURCE, { type: 'FeatureCollection', features })
 }
 
+export function setMeasureData(map: MapLibreMap, points: Coordinates[]): void {
+  if (!map.getSource(MEASURE_SOURCE)) return
+  const features: GeoJSON.Feature[] = points.map((point) => ({
+    type: 'Feature',
+    geometry: { type: 'Point', coordinates: [point.lng, point.lat] },
+    properties: {},
+  }))
+  if (points.length >= 2) {
+    features.push({
+      type: 'Feature',
+      geometry: {
+        type: 'LineString',
+        coordinates: points.map((point) => [point.lng, point.lat]),
+      },
+      properties: {},
+    })
+  }
+  setSourceData(map, MEASURE_SOURCE, { type: 'FeatureCollection', features })
+}
+
 const OVERLAY_ORDER = [
   SPOT_HIT_LAYER,
   SPOT_LAYER,
@@ -316,6 +373,8 @@ const OVERLAY_ORDER = [
   INSPECT_LAYER,
   POSITION_HALO_LAYER,
   POSITION_LAYER,
+  MEASURE_LINE_LAYER,
+  MEASURE_POINT_LAYER,
 ]
 
 /** Keep markers above plugin overlays (e.g. the airspace raster). */
